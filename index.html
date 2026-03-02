@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⏳ 扫雷游戏</title>
+  <title>⏳ 扫雷游戏 · 振动控制 (分步版)</title>
   <style>
     * {
       box-sizing: border-box;
@@ -96,13 +96,9 @@
       text-align: center;
       line-height: 1.2;
     }
-    .btn:active:not(:disabled) {
+    .btn:active {
       transform: translateY(2px);
       box-shadow: 0 2px 0 #2c7a7b;
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
     .btn.active {
       background: #38a169;
@@ -307,13 +303,6 @@
       margin-top: 8px;
       min-height: 20px;
     }
-    .loading-msg {
-      color: #d69e2e;
-      font-size: 0.85rem;
-      text-align: center;
-      margin-top: 8px;
-      min-height: 20px;
-    }
     .footer {
       text-align: center;
       color: #a0aec0;
@@ -342,23 +331,22 @@
 </head>
 <body>
 <div class="game-container">
-  <h1>💣 扫雷游戏 · 分步控制</h1>
+  <h1>💣 扫雷游戏</h1>
   
   <!-- 第1步：连接设备面板 -->
   <div class="config-panel" id="panelConnect">
     <div class="config-group">
-      <div class="config-title">🔌 步骤1：连接设备 (需API验证)</div>
+      <div class="config-title">🔌 步骤1：连接设备</div>
       <input type="text" id="connectionCode" class="input-field" 
-             placeholder="请输入连接码，例如: 100000 dv2ABCDe0e434a12345c3d516c580401f93fffa14f12345"
+             placeholder="请输入连接码，例如: 100000 dv2TVEUe0e434a00000c3d516c000000f93fffa14f00000"
              value="">
-      <div class="input-hint">格式：UID Token（用空格分隔）| 验证时会发送一个测试指令，不会触发设备。</div>
-      <div class="loading-msg" id="connectionLoading"></div>
+      <div class="input-hint">格式：UID Token（用空格分隔）</div>
       <div class="success-msg" id="connectionSuccess"></div>
       <div class="error-msg" id="connectionError"></div>
     </div>
     <div class="config-group" style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
       <button id="connectBtn" class="btn" style="width: 100%; padding: 12px; font-size: 1.1rem;">
-        🔄 验证并进入游戏设置
+        ✅ 验证并进入游戏设置
       </button>
     </div>
   </div>
@@ -368,7 +356,7 @@
     <div class="config-group">
       <div class="config-title">⚙️ 步骤2：游戏设置</div>
       <div style="color: #cbd5e0; font-size: 0.9rem; margin-bottom: 12px;">
-        棋盘大小：9 × 9 | 设备UID: <span id="currentUIDDisplay"></span>
+        棋盘大小：9 × 9
       </div>
     </div>
     
@@ -400,7 +388,7 @@
     </div>
     <div class="config-group" style="text-align: center;">
       <button id="backToConnectBtn" class="btn secondary" style="width: auto; padding: 8px 20px; font-size: 0.9rem;">
-        ↩️ 更换设备/连接码
+        ↩️ 返回修改连接
       </button>
     </div>
   </div>
@@ -421,7 +409,7 @@
     </div>
   </div>
   
-  <div class="footer">👆 点击翻开 · 长按标记 🚩 | 验证成功后，踩雷或超时将触发设备振动</div>
+  <div class="footer">👆 点击翻开 · 长按标记 🚩</div>
 </div>
 
 <script>
@@ -438,7 +426,7 @@
     let timerInterval = null;
     let timeLeftSeconds = 120;
     
-    // --- HTTP API 配置 (参考役次元开源协议) ---
+    // --- HTTP API 配置 ---
     const VIBRATION_API_URL = 'https://api.yokonex.com/v1/vibrate';
     let deviceUID = '';
     let deviceToken = '';
@@ -463,8 +451,6 @@
     const configError = document.getElementById('configError');
     const connectionError = document.getElementById('connectionError');
     const connectionSuccess = document.getElementById('connectionSuccess');
-    const connectionLoading = document.getElementById('connectionLoading');
-    const currentUIDDisplay = document.getElementById('currentUIDDisplay');
 
     // --- 面板切换函数 ---
     function switchToPanel(panelName) {
@@ -476,22 +462,19 @@
         panelConnect.style.display = 'block';
       } else if (panelName === 'config') {
         panelConfig.style.display = 'block';
-        if (deviceUID) {
-          currentUIDDisplay.textContent = deviceUID;
-        }
       } else if (panelName === 'game') {
         panelGame.style.display = 'block';
+        // 切换后确保棋盘滚动到可视区域
         setTimeout(() => { panelGame.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
       }
     }
 
-    // --- 解析连接码 (格式验证) ---
+    // --- 解析连接码 ---
     function parseConnectionCode() {
       const code = connectionCode.value.trim();
       
       connectionError.textContent = '';
       connectionSuccess.textContent = '';
-      connectionLoading.textContent = '';
       
       if (!code) {
         connectionError.textContent = '请输入连接码';
@@ -508,62 +491,8 @@
       deviceUID = match[1];
       deviceToken = match[2];
       
+      connectionSuccess.textContent = `连接信息已识别：UID=${deviceUID}`;
       return true;
-    }
-
-    // --- 新增：主动测试连接码有效性 (API验证) ---
-    async function testConnection() {
-      if (!deviceUID || !deviceToken) {
-        return { success: false, message: '连接信息为空' };
-      }
-      
-      // 构造一个极短、极低强度的测试指令，仅用于验证，不会使设备实际振动
-      const testVibrationData = {
-        uid: deviceUID,
-        token: deviceToken,
-        intensity: 1,        // 强度最低
-        duration: 100,       // 时间极短
-        pattern: [50, 50],   // 简单模式
-        test: true,          // 可选的测试标志
-        timestamp: Date.now()
-      };
-      
-      console.log('发送连接测试指令:', testVibrationData);
-      
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超时
-        
-        const response = await fetch(VIBRATION_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(testVibrationData),
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          // HTTP状态码错误
-          const errorText = await response.text();
-          console.warn('API返回错误状态:', response.status, errorText);
-          return { 
-            success: false, 
-            message: `服务器返回错误 (状态码: ${response.status})。请检查UID/Token是否正确，或稍后重试。` 
-          };
-        }
-        
-        const data = await response.json();
-        console.log('连接测试成功:', data);
-        return { success: true, message: '连接验证成功！' };
-        
-      } catch (error) {
-        console.error('连接测试过程中出错:', error);
-        if (error.name === 'AbortError') {
-          return { success: false, message: '连接超时，请检查网络或稍后重试。' };
-        }
-        return { success: false, message: `网络请求失败: ${error.message}` };
-      }
     }
 
     // --- 同步雷数输入框和滑块 ---
@@ -598,7 +527,19 @@
       updateMinesDisplay();
     });
 
-    // --- 验证游戏参数 (第二步使用) ---
+    // --- 验证设置（仅验证连接码） ---
+    function validateConnection() {
+      configError.textContent = '';
+      connectionError.textContent = '';
+      connectionSuccess.textContent = '';
+      
+      if (!parseConnectionCode()) {
+        return false;
+      }
+      return true;
+    }
+
+    // --- 验证设置（验证所有游戏参数） ---
     function validateGameConfig() {
       configError.textContent = '';
       
@@ -618,10 +559,10 @@
       return isValid;
     }
 
-    // --- 发送振动惩罚 (游戏中使用) ---
+    // --- 发送振动惩罚 ---
     async function triggerVibrationPunishment() {
       if (!deviceUID || !deviceToken) {
-        console.warn('未设置有效的设备连接信息');
+        console.warn('未设置设备连接信息');
         return;
       }
       
@@ -638,12 +579,14 @@
         timestamp: Date.now()
       };
       
-      console.log('发送游戏振动惩罚指令:', vibrationData);
+      console.log('发送振动指令:', vibrationData);
       
       try {
         const response = await fetch(VIBRATION_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(vibrationData)
         });
         
@@ -654,7 +597,7 @@
           }
         } else {
           const data = await response.json();
-          console.log('振动惩罚指令发送成功:', data);
+          console.log('振动指令发送成功:', data);
         }
       } catch (error) {
         console.error('发送振动指令时出错:', error);
@@ -664,7 +607,7 @@
       }
     }
 
-    // --- 游戏功能函数 (以下与原代码相同) ---
+    // --- 游戏功能函数 ---
     function formatTime(seconds) {
       if (seconds < 0) seconds = 0;
       const m = Math.floor(seconds / 60);
@@ -917,41 +860,11 @@
       startTimer();
     }
 
-    // --- 事件监听 (修改了连接验证部分) ---
-    connectBtn.addEventListener('click', async () => {
-      // 1. 清空之前的信息
-      connectionError.textContent = '';
-      connectionSuccess.textContent = '';
-      
-      // 2. 格式验证
-      if (!parseConnectionCode()) {
-        return; // 格式错误，parseConnectionCode已显示错误信息
+    // --- 事件监听 ---
+    connectBtn.addEventListener('click', () => {
+      if (validateConnection()) {
+        switchToPanel('config');
       }
-      
-      // 3. 开始API验证，更新UI状态
-      connectBtn.disabled = true;
-      connectBtn.textContent = '⏳ 验证中...';
-      connectionLoading.textContent = '正在向役次元服务器验证连接码，请稍候...';
-      
-      // 4. 执行API验证测试
-      const testResult = await testConnection();
-      
-      // 5. 根据验证结果处理
-      if (testResult.success) {
-        connectionSuccess.textContent = testResult.message;
-        connectionLoading.textContent = '';
-        // 验证成功，切换到设置面板
-        setTimeout(() => switchToPanel('config'), 600);
-      } else {
-        // 验证失败，停留在连接界面并显示错误
-        connectionError.textContent = `验证失败: ${testResult.message}`;
-        connectionLoading.textContent = '';
-        // 可以保留已输入的连接码，方便用户修改
-      }
-      
-      // 6. 恢复按钮状态
-      connectBtn.disabled = false;
-      connectBtn.textContent = '🔄 验证并进入游戏设置';
     });
 
     backToConnectBtn.addEventListener('click', () => {
@@ -980,8 +893,10 @@
         statusMsg.textContent = '游戏结束';
         revealAllMines();
         triggerVibrationPunishment();
+        // 关键修改：结束游戏后返回设置界面
         setTimeout(() => switchToPanel('config'), 800);
       } else {
+        // 如果游戏已结束，直接返回设置界面
         switchToPanel('config');
       }
     });
