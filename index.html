@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>⏳ 限时扫雷 · 开始/结束控制</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>⏳ 扫雷游戏</title>
   <style>
     * {
       box-sizing: border-box;
@@ -11,435 +11,660 @@
       user-select: none;
     }
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #3b3f45;
+      font-family: -apple-system, system-ui, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
       min-height: 100vh;
       margin: 0;
+      padding: 12px;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 8px;
     }
     .game-container {
-      max-width: 600px;
       width: 100%;
-      background: #4a4f5a;
-      border-radius: 32px 32px 28px 28px;
-      box-shadow: 0 12px 25px rgba(0,0,0,0.5);
-      padding: 20px 16px 24px;
-      border: 2px solid #6d7482;
+      max-width: 500px;
+      background: rgba(74, 85, 104, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
+      overflow: hidden;
+      padding: 16px;
     }
     h1 {
       text-align: center;
-      margin: 0 0 12px 0;
-      font-size: 1.9rem;
-      font-weight: 500;
-      letter-spacing: 2px;
-      color: #f5e7d3;
-      text-shadow: 2px 2px 0 #2f3540;
-    }
-    .panel {
-      background: #616774;
-      border-radius: 30px;
-      padding: 16px 12px;
-      margin-bottom: 18px;
-      box-shadow: inset 0 2px 5px #2f3540, 0 4px 0 #2f3540;
-    }
-    .difficulty-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 15px;
-      justify-content: center;
-    }
-    .custom-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      background: #505562;
-      padding: 12px 10px;
-      border-radius: 40px;
-      margin-bottom: 10px;
-    }
-    .badge {
-      color: #ffdba0;
+      margin: 0 0 16px 0;
+      font-size: 1.6rem;
       font-weight: 600;
-      font-size: 0.9rem;
-      margin-right: 4px;
+      color: #f7fafc;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-    .input-number {
-      width: 70px;
-      background: #2f3540;
-      border: none;
-      border-radius: 30px;
-      padding: 10px 8px;
+    .config-panel {
+      background: rgba(45, 55, 72, 0.9);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .config-group {
+      margin-bottom: 16px;
+    }
+    .config-group:last-child {
+      margin-bottom: 0;
+    }
+    .config-title {
+      color: #cbd5e0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .config-title i {
+      font-size: 1.1rem;
+    }
+    .input-field {
+      width: 100%;
+      background: #2d3748;
+      border: 2px solid #4a5568;
+      border-radius: 8px;
+      padding: 10px 12px;
       color: white;
+      font-size: 0.9rem;
+      font-family: 'Courier New', monospace;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #4fd1c7;
+    }
+    .input-hint {
+      color: #a0aec0;
+      font-size: 0.8rem;
+      margin-top: 4px;
+      margin-left: 4px;
+    }
+    .btn {
+      background: #4fd1c7;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 8px;
+      font-size: 0.9rem;
       font-weight: 600;
-      font-size: 1rem;
+      color: #1a202c;
+      box-shadow: 0 4px 0 #2c7a7b;
+      transition: all 0.1s ease;
+      cursor: pointer;
       text-align: center;
-      border: 2px solid #7f889a;
+      line-height: 1.2;
     }
-    .input-number:focus {
-      outline: 2px solid #f5b37c;
+    .btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #2c7a7b;
     }
-    .input-slider-container {
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn.active {
+      background: #38a169;
+      box-shadow: 0 4px 0 #276749;
+    }
+    .btn.secondary {
+      background: #90cdf4;
+      box-shadow: 0 4px 0 #4299e1;
+    }
+    .btn.danger {
+      background: #fc8181;
+      box-shadow: 0 4px 0 #c53030;
+    }
+    .time-input-group {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: #505562;
-      padding: 12px 10px;
-      border-radius: 40px;
-      margin-bottom: 10px;
+      background: rgba(26, 32, 44, 0.5);
+      border-radius: 12px;
+      padding: 8px 12px;
     }
-    .slider-label {
-      color: #ffdba0;
+    .time-input {
+      flex: 1;
+      background: #2d3748;
+      border: 2px solid #4a5568;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: white;
+      font-size: 1rem;
       font-weight: 600;
+      text-align: center;
+    }
+    .time-input:focus {
+      outline: none;
+      border-color: #4fd1c7;
+    }
+    .time-unit {
+      color: #cbd5e0;
       font-size: 0.9rem;
+      font-weight: 600;
       white-space: nowrap;
     }
-    .slider-value {
-      color: #ffffff;
-      font-weight: 600;
+    .mines-input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(26, 32, 44, 0.5);
+      border-radius: 12px;
+      padding: 8px 12px;
+    }
+    .mines-input {
+      flex: 1;
+      background: #2d3748;
+      border: 2px solid #4a5568;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: white;
       font-size: 1rem;
-      min-width: 30px;
+      font-weight: 600;
       text-align: center;
     }
-    .slider {
-      flex: 1;
+    .mines-input:focus {
+      outline: none;
+      border-color: #4fd1c7;
+    }
+    .mines-value-display {
+      color: #cbd5e0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .mines-slider {
+      width: 100%;
       -webkit-appearance: none;
       height: 8px;
-      background: #2f3540;
+      background: #2d3748;
       border-radius: 4px;
       outline: none;
+      margin-top: 8px;
     }
-    .slider::-webkit-slider-thumb {
+    .mines-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      background: #f5b37c;
+      width: 20px;
+      height: 20px;
+      background: #4fd1c7;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid #ffe1b3;
+      border: 2px solid #2c7a7b;
     }
-    .slider::-moz-range-thumb {
-      width: 22px;
-      height: 22px;
-      background: #f5b37c;
+    .mines-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: #4fd1c7;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid #ffe1b3;
+      border: 2px solid #2c7a7b;
     }
-    button {
-      background: #f5b37c;
-      border: none;
-      border-radius: 40px;
-      padding: 10px 18px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: #1e2229;
-      box-shadow: 0 4px 0 #9f6e4b, 0 2px 8px rgba(0,0,0,0.3);
-      transition: 0.05s linear;
-      cursor: pointer;
-      touch-action: manipulation;
-      border: 1px solid #ffe1b3;
-      min-width: 64px;
-    }
-    button:active {
-      transform: translateY(4px);
-      box-shadow: 0 0 0 #9f6e4b, 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .time-preset {
-      background: #b0c2d9;
-      box-shadow: 0 4px 0 #6f7c91;
-    }
-    .time-preset:active { transform: translateY(4px); box-shadow: none; }
-    .start-btn {
-      background: #80c0a0;
-      box-shadow: 0 4px 0 #4f735b;
-      font-size: 1.3rem;
-      padding: 12px 25px;
-      flex: 1 0 auto;
-    }
-    .end-btn {
-      background: #c57c7c;
-      box-shadow: 0 4px 0 #7a4f4f;
+    .game-panel {
+      display: none;
+      background: rgba(45, 55, 72, 0.9);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     .info-bar {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
       justify-content: space-between;
-      background: #2f3540;
-      border-radius: 50px;
-      padding: 12px 18px;
-      margin-bottom: 20px;
-      color: #f0e9dd;
-      font-weight: bold;
-      font-size: 1.3rem;
-      border: 2px solid #6d7a8c;
+      align-items: center;
+      background: rgba(26, 32, 44, 0.8);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
     }
     .timer, .mine-counter {
-      background: #0f1217;
-      padding: 6px 20px;
-      border-radius: 40px;
+      background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+      padding: 6px 12px;
+      border-radius: 8px;
       font-family: 'Courier New', monospace;
-      letter-spacing: 3px;
-      border: 2px solid #7f8c9f;
-      color: #fdd68b;
-      font-size: 1.4rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #68d391;
+      letter-spacing: 1px;
+      min-width: 70px;
+      text-align: center;
     }
     .status-msg {
-      background: #424857;
-      border-radius: 30px;
-      padding: 5px 15px;
-      font-size: 1.2rem;
+      color: #cbd5e0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      flex: 1;
+      margin: 0 12px;
     }
     .board {
       display: grid;
-      gap: 3px;
-      background: #787f8f;
-      padding: 14px;
-      border-radius: 30px;
-      border: 4px solid #5a6070;
-      box-shadow: inset 0 0 0 2px #353b45;
-      margin-top: 8px;
-      touch-action: pan-y pinch-zoom;
+      gap: 2px;
+      background: #4a5568;
+      padding: 8px;
+      border-radius: 12px;
+      border: 2px solid #2d3748;
+      margin-bottom: 16px;
     }
     .cell {
-      aspect-ratio: 1 / 1;
-      background: #a7b0bd;
-      border-radius: 8px;
+      aspect-ratio: 1;
+      background: #718096;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 1.4rem;
-      box-shadow: inset 0 -2px 0 #5b6475, inset 0 2px 5px #dbe1ed;
-      transition: 0.05s;
-      color: #1b2a41;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #1a202c;
       cursor: pointer;
-      -webkit-touch-callout: none;
-      touch-action: manipulation;
+      transition: all 0.1s ease;
     }
     .cell.covered {
-      background: #9aa3b5;
-      box-shadow: inset 0 -4px 0 #616b7e, inset 0 1px 5px #eef3fc;
+      background: #90cdf4;
+      box-shadow: inset 0 -2px 0 #4299e1;
     }
     .cell.covered:active {
-      background: #7d879b;
-      transform: scale(0.98);
+      background: #63b3ed;
+      transform: scale(0.95);
     }
     .cell.revealed {
-      background: #cfd6e6;
-      box-shadow: inset 0 0 0 1px #abb4c7;
+      background: #cbd5e0;
     }
     .cell.flagged::before {
       content: "🚩";
-      font-size: 1.6rem;
-      line-height: 1;
+      font-size: 0.8rem;
     }
     .cell.revealed.mine {
-      background: #c55a5a;
-      color: black;
+      background: #fc8181;
     }
     .cell.revealed.mine::before {
       content: "💣";
     }
-    .cell.revealed:not(.mine):not(.flagged) {
-      color: #1d3e6b;
+    .num1 { color: #2b6cb0; }
+    .num2 { color: #276749; }
+    .num3 { color: #c53030; }
+    .num4 { color: #553c9a; }
+    .num5 { color: #9b2c2c; }
+    .num6 { color: #2c7a7b; }
+    .num7 { color: #1a202c; }
+    .num8 { color: #744210; }
+    .control-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
-    .num1 { color: #0202c2; }
-    .num2 { color: #1f7a1f; }
-    .num3 { color: #c10101; }
-    .num4 { color: #0d0d72; }
-    .num5 { color: #7b0f4b; }
-    .num6 { color: #2b6c7c; }
-    .num7 { color: #1e1e1e; }
-    .num8 { color: #5e3f0b; }
+    .error-msg {
+      color: #fc8181;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 8px;
+      min-height: 20px;
+    }
+    .success-msg {
+      color: #68d391;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 8px;
+      min-height: 20px;
+    }
+    .loading-msg {
+      color: #d69e2e;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 8px;
+      min-height: 20px;
+    }
     .footer {
       text-align: center;
-      color: #bac3d0;
-      margin-top: 15px;
-      font-size: 0.9rem;
+      color: #a0aec0;
+      font-size: 0.8rem;
+      margin-top: 12px;
     }
-    .flex-fill {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-    }
-    .label-min {
-      color: #ffddb0;
-      font-weight: 500;
-      margin-left: 5px;
+    @media (max-width: 380px) {
+      .game-container {
+        padding: 12px;
+      }
+      .btn {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+      }
+      .time-input, .mines-input {
+        padding: 6px 8px;
+        font-size: 0.9rem;
+      }
+      .timer, .mine-counter {
+        font-size: 1rem;
+        min-width: 60px;
+        padding: 4px 8px;
+      }
     }
   </style>
 </head>
 <body>
 <div class="game-container">
-  <h1>💣 扫雷 · 倒计时</h1>
-
-  <!-- 难度预设 + 自定义行列雷 -->
-  <div class="panel">
-    <div class="difficulty-row">
-      <button id="easyPreset">🌱 初级<br><small>8x8 / 10雷</small></button>
-      <button id="mediumPreset">🍂 中级<br><small>16x16 / 40雷</small></button>
-      <button id="hardPreset">🗻 高级<br><small>22x22 / 99雷</small></button>
+  <h1>💣 扫雷游戏 · 分步控制</h1>
+  
+  <!-- 第1步：连接设备面板 -->
+  <div class="config-panel" id="panelConnect">
+    <div class="config-group">
+      <div class="config-title">🔌 步骤1：连接设备 (需API验证)</div>
+      <input type="text" id="connectionCode" class="input-field" 
+             placeholder="请输入连接码，例如: 109586 dv2TVEUe0e434a48590c3d516c580401f93fffa14f45792"
+             value="">
+      <div class="input-hint">格式：UID Token（用空格分隔）| 验证时会发送一个测试指令，不会触发振动。</div>
+      <div class="loading-msg" id="connectionLoading"></div>
+      <div class="success-msg" id="connectionSuccess"></div>
+      <div class="error-msg" id="connectionError"></div>
     </div>
-    <div class="custom-row">
-      <span class="badge">📐自定义</span>
-      <input id="rows" class="input-number" type="number" min="2" max="24" value="8" step="1">
-      <span style="color:white;">✖️</span>
-      <input id="cols" class="input-number" type="number" min="2" max="30" value="8" step="1">
-      <span class="badge" style="margin-left:5px;">💣雷数</span>
-      <input id="mines" class="input-number" type="number" min="1" max="500" value="10" step="1">
-    </div>
-    
-    <!-- 新增：惩罚力度设置 -->
-    <div class="input-slider-container">
-      <span class="slider-label">🔧 惩罚力度</span>
-      <input type="range" id="punishmentSlider" class="slider" min="1" max="10" value="5">
-      <input id="punishmentInput" class="input-number" type="number" min="1" max="10" value="5" step="1" style="width: 60px;">
-      <span class="slider-value" id="punishmentValue">5</span>
+    <div class="config-group" style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <button id="connectBtn" class="btn" style="width: 100%; padding: 12px; font-size: 1.1rem;">
+        🔄 验证并进入游戏设置
+      </button>
     </div>
   </div>
 
-  <!-- 时间预设 + 自定义时间 + 开始/结束按钮 -->
-  <div class="panel" style="padding: 12px;">
-    <div class="flex-fill" style="margin-bottom: 10px;">
-      <button class="time-preset" data-min="1">⏱️ 1'</button>
-      <button class="time-preset" data-min="3">⏱️ 3'</button>
-      <button class="time-preset" data-min="5">⏱️ 5'</button>
-      <button class="time-preset" data-min="10">⏱️ 10'</button>
-      <div style="display: flex; align-items: center; background:#404654; border-radius:40px; padding:2px 10px;">
-        <input id="customMinutes" class="input-number" type="number" min="0.1" max="120" value="1" step="0.1" style="width:85px;">
-        <span class="label-min">分钟</span>
+  <!-- 第2步：游戏设置面板（初始隐藏） -->
+  <div class="config-panel" id="panelConfig" style="display: none;">
+    <div class="config-group">
+      <div class="config-title">⚙️ 步骤2：游戏设置</div>
+      <div style="color: #cbd5e0; font-size: 0.9rem; margin-bottom: 12px;">
+        棋盘大小：9 × 9 | 设备UID: <span id="currentUIDDisplay"></span>
       </div>
     </div>
-    <div style="display: flex; gap: 12px;">
-      <button id="newGameBtn" class="start-btn">🚀 开始游戏</button>
-      <button id="endGameBtn" class="start-btn end-btn">⏹️ 结束游戏</button>
+    
+    <div class="config-group">
+      <div class="config-title">💣 雷数设置 (10-33)</div>
+      <div class="mines-input-group">
+        <input type="range" id="minesSlider" class="mines-slider" min="10" max="33" value="10">
+      </div>
+      <div class="mines-input-group">
+        <input type="number" id="minesInput" class="mines-input" min="10" max="33" value="10">
+        <span class="mines-value-display">个雷</span>
+      </div>
+    </div>
+    
+    <div class="config-group">
+      <div class="config-title">⏱️ 游戏时间 (1-60分钟)</div>
+      <div class="time-input-group">
+        <input type="number" id="timeInput" class="time-input" min="1" max="60" value="2" step="1">
+        <span class="time-unit">分钟</span>
+      </div>
+    </div>
+    
+    <div class="error-msg" id="configError"></div>
+
+    <div class="config-group" style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <button id="startGameBtn" class="btn" style="width: 100%; padding: 12px; font-size: 1.1rem;">
+        🚀 开始游戏
+      </button>
+    </div>
+    <div class="config-group" style="text-align: center;">
+      <button id="backToConnectBtn" class="btn secondary" style="width: auto; padding: 8px 20px; font-size: 0.9rem;">
+        ↩️ 更换设备/连接码
+      </button>
     </div>
   </div>
 
-  <!-- 信息栏：计时 / 剩余雷数 / 状态 -->
-  <div class="info-bar">
-    <div class="timer" id="timerDisplay">01:00</div>
-    <div class="status-msg" id="statusMessage">⏸️ 待开始</div>
-    <div class="mine-counter" id="mineCountDisplay">010</div>
+  <!-- 第3步：游戏主面板（初始隐藏） -->
+  <div class="game-panel" id="panelGame">
+    <div class="info-bar">
+      <div class="timer" id="timerDisplay">02:00</div>
+      <div class="status-msg" id="statusMessage">准备开始</div>
+      <div class="mine-counter" id="mineCountDisplay">010</div>
+    </div>
+    
+    <div id="board" class="board"></div>
+    
+    <div class="control-buttons">
+      <button id="restartBtn" class="btn secondary">🔄 重新开始</button>
+      <button id="endGameBtn" class="btn danger">⏹️ 结束游戏</button>
+    </div>
   </div>
-
-  <!-- 游戏板 -->
-  <div id="board" class="board" style="justify-content: center;"></div>
-  <div class="footer">👆 单击翻开 · 长按/右键 🚩 插旗</div>
+  
+  <div class="footer">👆 点击翻开 · 长按标记 🚩 | 验证成功后，踩雷或超时将触发设备振动</div>
 </div>
 
 <script>
   (function() {
+    // --- 游戏状态变量 ---
+    let board = [];
+    const rows = 9, cols = 9;
+    let totalMines = 10;
+    let gameActive = false;
+    let gameWin = false;
+    let gameLose = false;
+    let firstClick = true;
+    let flagCount = 0;
+    let timerInterval = null;
+    let timeLeftSeconds = 120;
+    
+    // --- HTTP API 配置 (参考役次元开源协议) ---
+    const VIBRATION_API_URL = 'https://api.yokonex.com/v1/vibrate';
+    let deviceUID = '';
+    let deviceToken = '';
+    
     // --- DOM 元素 ---
+    const panelConnect = document.getElementById('panelConnect');
+    const panelConfig = document.getElementById('panelConfig');
+    const panelGame = document.getElementById('panelGame');
     const boardEl = document.getElementById('board');
-    const rowsInput = document.getElementById('rows');
-    const colsInput = document.getElementById('cols');
-    const minesInput = document.getElementById('mines');
-    const customMinutes = document.getElementById('customMinutes');
     const timerDisplay = document.getElementById('timerDisplay');
     const mineCountDisplay = document.getElementById('mineCountDisplay');
     const statusMsg = document.getElementById('statusMessage');
-    const newGameBtn = document.getElementById('newGameBtn');
+    const connectBtn = document.getElementById('connectBtn');
+    const backToConnectBtn = document.getElementById('backToConnectBtn');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const restartBtn = document.getElementById('restartBtn');
     const endGameBtn = document.getElementById('endGameBtn');
-    
-    // 新增：惩罚设置相关元素
-    const punishmentSlider = document.getElementById('punishmentSlider');
-    const punishmentInput = document.getElementById('punishmentInput');
-    const punishmentValue = document.getElementById('punishmentValue');
+    const connectionCode = document.getElementById('connectionCode');
+    const timeInput = document.getElementById('timeInput');
+    const minesInput = document.getElementById('minesInput');
+    const minesSlider = document.getElementById('minesSlider');
+    const configError = document.getElementById('configError');
+    const connectionError = document.getElementById('connectionError');
+    const connectionSuccess = document.getElementById('connectionSuccess');
+    const connectionLoading = document.getElementById('connectionLoading');
+    const currentUIDDisplay = document.getElementById('currentUIDDisplay');
 
-    // --- HTTP API 配置 ---
-    const VIBRATION_API_URL = 'https://api.your-vibration-device.com/v1/vibrate'; // 请替换为实际API端点
-    const API_KEY = 'your-api-key-here'; // 请替换为您的API密钥
-    
-    // 振动参数映射
-    const VIBRATION_PRESETS = {
-      easy: { intensity: 30, duration: 1000, pattern: [200, 100] },    // 初级：强度30，持续1秒
-      medium: { intensity: 60, duration: 2000, pattern: [200, 100, 200, 100] }, // 中级：强度60，持续2秒
-      hard: { intensity: 100, duration: 3000, pattern: [300, 100, 300, 100, 300, 100] } // 高级：强度100，持续3秒
-    };
+    // --- 面板切换函数 ---
+    function switchToPanel(panelName) {
+      panelConnect.style.display = 'none';
+      panelConfig.style.display = 'none';
+      panelGame.style.display = 'none';
 
-    // --- 游戏状态变量 ---
-    let board = [];
-    let rows = 8, cols = 8, totalMines = 10;
-    let gameActive = false;         // true 表示可以进行操作
-    let gameWin = false;
-    let gameLose = false;
-    let firstClick = true;          // 首次点击标记
-    let flagCount = 0;
-    let timerInterval = null;
-    let timeLeftSeconds = 60;
-    let initialTimeSeconds = 60;
-    let currentDifficulty = 'easy'; // 当前难度：easy/medium/hard
-    let punishmentLevel = 5;        // 惩罚力度：1-10
-
-    // --- 更新惩罚力度显示 ---
-    function updatePunishmentDisplay() {
-      punishmentValue.textContent = punishmentLevel;
-      punishmentInput.value = punishmentLevel;
-      punishmentSlider.value = punishmentLevel;
+      if (panelName === 'connect') {
+        panelConnect.style.display = 'block';
+      } else if (panelName === 'config') {
+        panelConfig.style.display = 'block';
+        if (deviceUID) {
+          currentUIDDisplay.textContent = deviceUID;
+        }
+      } else if (panelName === 'game') {
+        panelGame.style.display = 'block';
+        setTimeout(() => { panelGame.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+      }
     }
 
-    // --- 发送振动惩罚 ---
-    async function triggerVibrationPunishment() {
-      // 获取当前难度对应的基础振动参数
-      const basePreset = VIBRATION_PRESETS[currentDifficulty];
-      if (!basePreset) return;
+    // --- 解析连接码 (格式验证) ---
+    function parseConnectionCode() {
+      const code = connectionCode.value.trim();
       
-      // 计算最终的惩罚力度（基础参数 * 用户自定义系数）
-      const userMultiplier = punishmentLevel / 5; // 5是中间值，力度系数 = 用户设置/5
-      const finalIntensity = Math.min(100, Math.max(10, Math.round(basePreset.intensity * userMultiplier)));
-      const finalDuration = Math.min(5000, Math.max(500, Math.round(basePreset.duration * userMultiplier)));
+      connectionError.textContent = '';
+      connectionSuccess.textContent = '';
+      connectionLoading.textContent = '';
       
-      // 构建振动数据
-      const vibrationData = {
-        intensity: finalIntensity,  // 振动强度 0-100
-        duration: finalDuration,    // 总持续时间（毫秒）
-        pattern: basePreset.pattern, // 振动模式
-        level: punishmentLevel,     // 用户设置的惩罚级别
-        difficulty: currentDifficulty // 当前游戏难度
+      if (!code) {
+        connectionError.textContent = '请输入连接码';
+        return false;
+      }
+      
+      const match = code.match(/^(\d+)\s+(\S+)$/);
+      
+      if (!match) {
+        connectionError.textContent = '连接码格式错误，应为：UID Token（用空格分隔）';
+        return false;
+      }
+      
+      deviceUID = match[1];
+      deviceToken = match[2];
+      
+      return true;
+    }
+
+    // --- 新增：主动测试连接码有效性 (API验证) ---
+    async function testConnection() {
+      if (!deviceUID || !deviceToken) {
+        return { success: false, message: '连接信息为空' };
+      }
+      
+      // 构造一个极短、极低强度的测试指令，仅用于验证，不会使设备实际振动
+      const testVibrationData = {
+        uid: deviceUID,
+        token: deviceToken,
+        intensity: 1,        // 强度最低
+        duration: 100,       // 时间极短
+        pattern: [50, 50],   // 简单模式
+        test: true,          // 可选的测试标志
+        timestamp: Date.now()
       };
       
-      console.log('触发振动惩罚:', vibrationData);
+      console.log('发送连接测试指令:', testVibrationData);
       
       try {
-        // 发送HTTP POST请求到振动设备API
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超时
+        
         const response = await fetch(VIBRATION_API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-          },
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testVibrationData),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          // HTTP状态码错误
+          const errorText = await response.text();
+          console.warn('API返回错误状态:', response.status, errorText);
+          return { 
+            success: false, 
+            message: `服务器返回错误 (状态码: ${response.status})。请检查UID/Token是否正确，或稍后重试。` 
+          };
+        }
+        
+        const data = await response.json();
+        console.log('连接测试成功:', data);
+        return { success: true, message: '连接验证成功！' };
+        
+      } catch (error) {
+        console.error('连接测试过程中出错:', error);
+        if (error.name === 'AbortError') {
+          return { success: false, message: '连接超时，请检查网络或稍后重试。' };
+        }
+        return { success: false, message: `网络请求失败: ${error.message}` };
+      }
+    }
+
+    // --- 同步雷数输入框和滑块 ---
+    function updateMinesDisplay() {
+      minesInput.value = totalMines;
+      minesSlider.value = totalMines;
+      mineCountDisplay.textContent = totalMines.toString().padStart(3, '0');
+    }
+
+    // --- 雷数输入框事件 ---
+    minesInput.addEventListener('input', () => {
+      let value = parseInt(minesInput.value);
+      if (isNaN(value)) value = 10;
+      if (value < 10) value = 10;
+      if (value > 33) value = 33;
+      totalMines = value;
+      updateMinesDisplay();
+    });
+
+    minesInput.addEventListener('change', () => {
+      let value = parseInt(minesInput.value);
+      if (isNaN(value)) value = 10;
+      if (value < 10) value = 10;
+      if (value > 33) value = 33;
+      totalMines = value;
+      updateMinesDisplay();
+    });
+
+    // --- 雷数滑块事件 ---
+    minesSlider.addEventListener('input', () => {
+      totalMines = parseInt(minesSlider.value);
+      updateMinesDisplay();
+    });
+
+    // --- 验证游戏参数 (第二步使用) ---
+    function validateGameConfig() {
+      configError.textContent = '';
+      
+      let isValid = true;
+      
+      if (totalMines < 10 || totalMines > 33) {
+        configError.textContent = '雷数必须在10-33之间';
+        isValid = false;
+      }
+      
+      const time = parseInt(timeInput.value);
+      if (isNaN(time) || time < 1 || time > 60) {
+        configError.textContent = '请设置1-60分钟的合理时间';
+        isValid = false;
+      }
+      
+      return isValid;
+    }
+
+    // --- 发送振动惩罚 (游戏中使用) ---
+    async function triggerVibrationPunishment() {
+      if (!deviceUID || !deviceToken) {
+        console.warn('未设置有效的设备连接信息');
+        return;
+      }
+      
+      const intensity = Math.min(100, Math.max(30, Math.round(30 + (totalMines - 10) * 3)));
+      const duration = Math.min(3000, Math.max(1000, Math.round(1000 + (totalMines - 10) * 100)));
+      
+      const vibrationData = {
+        uid: deviceUID,
+        token: deviceToken,
+        intensity: intensity,
+        duration: duration,
+        pattern: [200, 100],
+        mines: totalMines,
+        timestamp: Date.now()
+      };
+      
+      console.log('发送游戏振动惩罚指令:', vibrationData);
+      
+      try {
+        const response = await fetch(VIBRATION_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(vibrationData)
         });
         
         if (!response.ok) {
           console.warn('振动API请求失败:', response.status);
-          // 如果实际API不可用，可以使用浏览器振动API作为后备（如果浏览器支持）
-          if (navigator.vibrate) {
-            const pattern = basePreset.pattern.map(t => t * userMultiplier);
-            navigator.vibrate(pattern);
+          if (navigator.vibrate && vibrationData.pattern) {
+            navigator.vibrate(vibrationData.pattern);
           }
         } else {
-          console.log('振动惩罚已发送');
+          const data = await response.json();
+          console.log('振动惩罚指令发送成功:', data);
         }
       } catch (error) {
-        console.error('发送振动惩罚时出错:', error);
-        // 错误处理：尝试使用浏览器振动API
-        if (navigator.vibrate) {
-          const pattern = basePreset.pattern.map(t => t * userMultiplier);
-          navigator.vibrate(pattern);
+        console.error('发送振动指令时出错:', error);
+        if (navigator.vibrate && vibrationData.pattern) {
+          navigator.vibrate(vibrationData.pattern);
         }
       }
     }
 
-    // --- 辅助函数：格式化 mm:ss ---
+    // --- 游戏功能函数 (以下与原代码相同) ---
     function formatTime(seconds) {
       if (seconds < 0) seconds = 0;
       const m = Math.floor(seconds / 60);
@@ -447,13 +672,11 @@
       return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
 
-    // --- 更新剩余雷数显示 ---
-    function updateMineCounter() {
+    function updateGameMineCounter() {
       let remaining = totalMines - flagCount;
       mineCountDisplay.textContent = remaining.toString().padStart(3, '0');
     }
 
-    // --- 停止计时器 ---
     function stopTimer() {
       if (timerInterval) {
         clearInterval(timerInterval);
@@ -461,7 +684,6 @@
       }
     }
 
-    // --- 开始倒计时 ---
     function startTimer() {
       if (timerInterval) stopTimer();
       if (!gameActive || gameWin || gameLose) return;
@@ -479,26 +701,14 @@
           timerDisplay.textContent = formatTime(0);
           gameLose = true;
           gameActive = false;
-          statusMsg.innerText = '💥 时间到...';
+          statusMsg.textContent = '💥 时间到！';
           revealAllMines();
           stopTimer();
-          // 时间到触发惩罚
           triggerVibrationPunishment();
         }
       }, 1000);
     }
 
-    // --- 从输入重置时间显示 (不启动) ---
-    function resetTimeFromInput() {
-      let mins = parseFloat(customMinutes.value);
-      if (isNaN(mins) || mins <= 0) mins = 1;
-      if (mins > 120) mins = 120;
-      initialTimeSeconds = Math.floor(mins * 60);
-      timeLeftSeconds = initialTimeSeconds;
-      timerDisplay.textContent = formatTime(timeLeftSeconds);
-    }
-
-    // --- 生成随机棋盘 (不保证首次点击安全) ---
     function generateRandomBoard(r, c, mineCount) {
       const newBoard = [];
       for (let i = 0; i < r; i++) {
@@ -534,7 +744,6 @@
       return newBoard;
     }
 
-    // --- 重新生成避开首次点击 ---
     function regenerateBoardExcluding(clickRow, clickCol) {
       let newBoard;
       let valid = false;
@@ -545,7 +754,6 @@
       return newBoard;
     }
 
-    // --- 渲染网格 ---
     function renderBoard() {
       boardEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
       boardEl.innerHTML = '';
@@ -561,10 +769,10 @@
             cellDiv.classList.add('revealed');
             if (cell.mine) {
               cellDiv.classList.add('mine');
-              cellDiv.innerText = '';
+              cellDiv.textContent = '';
             } else {
               const cnt = cell.neighborMines;
-              cellDiv.innerText = cnt === 0 ? '' : cnt;
+              cellDiv.textContent = cnt === 0 ? '' : cnt;
               if (cnt > 0) cellDiv.classList.add(`num${cnt}`);
             }
           } else {
@@ -572,7 +780,7 @@
             if (cell.flagged) {
               cellDiv.classList.add('flagged');
             } else {
-              cellDiv.innerText = '';
+              cellDiv.textContent = '';
             }
           }
           boardEl.appendChild(cellDiv);
@@ -580,7 +788,6 @@
       }
     }
 
-    // --- 翻开所有雷 (游戏失败时) ---
     function revealAllMines() {
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -592,7 +799,6 @@
       renderBoard();
     }
 
-    // --- 检查胜利 ---
     function checkWin() {
       let revealedCount = 0;
       for (let r = 0; r < rows; r++) {
@@ -603,14 +809,13 @@
       if (revealedCount === rows * cols - totalMines) {
         gameWin = true;
         gameActive = false;
-        statusMsg.innerText = '🎉 胜利 !';
+        statusMsg.textContent = '🎉 胜利！';
         stopTimer();
         return true;
       }
       return false;
     }
 
-    // --- 翻开格子 ---
     function openCell(row, col) {
       if (!gameActive || gameWin || gameLose) return;
       if (row < 0 || row >= rows || col < 0 || col >= cols) return;
@@ -626,7 +831,7 @@
           gameActive = true;
           openCell(row, col);
           renderBoard();
-          updateMineCounter();
+          updateGameMineCounter();
           return;
         } else {
           firstClick = false;
@@ -637,11 +842,10 @@
         cell.revealed = true;
         gameActive = false;
         gameLose = true;
-        statusMsg.innerText = '💣 踩雷了...';
+        statusMsg.textContent = '💣 踩雷了！';
         revealAllMines();
         stopTimer();
         renderBoard();
-        // 踩雷触发惩罚
         triggerVibrationPunishment();
         return;
       }
@@ -659,7 +863,8 @@
             for (let dc = -1; dc <= 1; dc++) {
               if (dr === 0 && dc === 0) continue;
               const nr = r + dr, nc = c + dc;
-              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !board[nr][nc].revealed && !board[nr][nc].flagged && !board[nr][nc].mine) {
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && 
+                  !board[nr][nc].revealed && !board[nr][nc].flagged && !board[nr][nc].mine) {
                 queue.push({r: nr, c: nc});
               }
             }
@@ -674,7 +879,6 @@
       }
     }
 
-    // --- 切换旗子 ---
     function toggleFlag(row, col) {
       if (!gameActive || gameWin || gameLose) return;
       if (firstClick) return;
@@ -688,69 +892,110 @@
         cell.flagged = false;
         flagCount--;
       }
-      updateMineCounter();
+      updateGameMineCounter();
       renderBoard();
       checkWin();
     }
 
-    // --- 重置棋盘 (根据active决定是否立即开始) ---
-    function resetBoard(active) {
-      // 读取参数并限制
-      let r = parseInt(rowsInput.value);
-      let c = parseInt(colsInput.value);
-      let m = parseInt(minesInput.value);
-      r = Math.min(30, Math.max(2, isNaN(r) ? 8 : r));
-      c = Math.min(30, Math.max(2, isNaN(c) ? 8 : c));
-      const maxMines = r * c - 1;
-      m = Math.min(maxMines, Math.max(1, isNaN(m) ? 10 : m));
-      rows = r; cols = c; totalMines = m;
-      rowsInput.value = rows; colsInput.value = cols; minesInput.value = totalMines;
-      
-      // 根据棋盘大小确定难度
-      if (rows === 8 && cols === 8 && totalMines === 10) {
-        currentDifficulty = 'easy';
-      } else if (rows === 16 && cols === 16 && totalMines === 40) {
-        currentDifficulty = 'medium';
-      } else if (rows === 22 && cols === 22 && totalMines === 99) {
-        currentDifficulty = 'hard';
-      } else {
-        // 自定义棋盘使用中级难度
-        currentDifficulty = 'medium';
-      }
-
-      // 重置时间显示
-      resetTimeFromInput();
-
-      // 停止旧计时
-      stopTimer();
-
-      // 生成新棋盘
+    function resetGame() {
       board = generateRandomBoard(rows, cols, totalMines);
       firstClick = true;
-      gameActive = active;
+      gameActive = true;
       gameWin = false;
       gameLose = false;
       flagCount = 0;
-      updateMineCounter();
-      statusMsg.innerText = active ? '💪 进行中' : '⏸️ 待开始';
+      
+      const minutes = parseInt(timeInput.value) || 2;
+      timeLeftSeconds = minutes * 60;
+      timerDisplay.textContent = formatTime(timeLeftSeconds);
+      
+      updateGameMineCounter();
+      statusMsg.textContent = '游戏进行中';
       renderBoard();
-
-      if (active) {
-        startTimer();
-      }
+      
+      stopTimer();
+      startTimer();
     }
 
-    // --- 事件监听 ---
-    function handleBoardClick(e) {
+    // --- 事件监听 (修改了连接验证部分) ---
+    connectBtn.addEventListener('click', async () => {
+      // 1. 清空之前的信息
+      connectionError.textContent = '';
+      connectionSuccess.textContent = '';
+      
+      // 2. 格式验证
+      if (!parseConnectionCode()) {
+        return; // 格式错误，parseConnectionCode已显示错误信息
+      }
+      
+      // 3. 开始API验证，更新UI状态
+      connectBtn.disabled = true;
+      connectBtn.textContent = '⏳ 验证中...';
+      connectionLoading.textContent = '正在向役次元服务器验证连接码，请稍候...';
+      
+      // 4. 执行API验证测试
+      const testResult = await testConnection();
+      
+      // 5. 根据验证结果处理
+      if (testResult.success) {
+        connectionSuccess.textContent = testResult.message;
+        connectionLoading.textContent = '';
+        // 验证成功，切换到设置面板
+        setTimeout(() => switchToPanel('config'), 600);
+      } else {
+        // 验证失败，停留在连接界面并显示错误
+        connectionError.textContent = `验证失败: ${testResult.message}`;
+        connectionLoading.textContent = '';
+        // 可以保留已输入的连接码，方便用户修改
+      }
+      
+      // 6. 恢复按钮状态
+      connectBtn.disabled = false;
+      connectBtn.textContent = '🔄 验证并进入游戏设置';
+    });
+
+    backToConnectBtn.addEventListener('click', () => {
+      switchToPanel('connect');
+    });
+
+    startGameBtn.addEventListener('click', () => {
+      if (validateGameConfig()) {
+        switchToPanel('game');
+        resetGame();
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      if (validateGameConfig()) {
+        resetGame();
+      }
+    });
+
+    endGameBtn.addEventListener('click', () => {
+      if (gameActive) {
+        stopTimer();
+        gameActive = false;
+        gameLose = true;
+        gameWin = false;
+        statusMsg.textContent = '游戏结束';
+        revealAllMines();
+        triggerVibrationPunishment();
+        setTimeout(() => switchToPanel('config'), 800);
+      } else {
+        switchToPanel('config');
+      }
+    });
+
+    boardEl.addEventListener('click', (e) => {
       const cellDiv = e.target.closest('.cell');
       if (!cellDiv) return;
       const row = parseInt(cellDiv.dataset.row);
       const col = parseInt(cellDiv.dataset.col);
       if (isNaN(row) || isNaN(col)) return;
       openCell(row, col);
-    }
+    });
 
-    function handleBoardContextMenu(e) {
+    boardEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       const cellDiv = e.target.closest('.cell');
       if (!cellDiv) return;
@@ -758,85 +1003,11 @@
       const col = parseInt(cellDiv.dataset.col);
       if (isNaN(row) || isNaN(col)) return;
       toggleFlag(row, col);
-    }
-
-    // 难度预设
-    document.getElementById('easyPreset').addEventListener('click', () => {
-      rowsInput.value = 8; colsInput.value = 8; minesInput.value = 10;
-      currentDifficulty = 'easy';
-    });
-    document.getElementById('mediumPreset').addEventListener('click', () => {
-      rowsInput.value = 16; colsInput.value = 16; minesInput.value = 40;
-      currentDifficulty = 'medium';
-    });
-    document.getElementById('hardPreset').addEventListener('click', () => {
-      rowsInput.value = 22; colsInput.value = 22; minesInput.value = 99;
-      currentDifficulty = 'hard';
     });
 
-    // 时间预设
-    document.querySelectorAll('.time-preset').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const min = e.target.dataset.min;
-        if (min) customMinutes.value = min;
-      });
-    });
-
-    // 惩罚力度滑块事件
-    punishmentSlider.addEventListener('input', (e) => {
-      punishmentLevel = parseInt(e.target.value);
-      updatePunishmentDisplay();
-    });
-    
-    punishmentInput.addEventListener('input', (e) => {
-      let value = parseInt(e.target.value);
-      if (isNaN(value)) value = 5;
-      if (value < 1) value = 1;
-      if (value > 10) value = 10;
-      punishmentLevel = value;
-      updatePunishmentDisplay();
-    });
-    
-    punishmentInput.addEventListener('change', (e) => {
-      let value = parseInt(e.target.value);
-      if (isNaN(value)) value = 5;
-      if (value < 1) value = 1;
-      if (value > 10) value = 10;
-      punishmentLevel = value;
-      updatePunishmentDisplay();
-    });
-
-    // 开始游戏
-    newGameBtn.addEventListener('click', () => {
-      resetBoard(true);
-    });
-
-    // 结束游戏：强制失败
-    endGameBtn.addEventListener('click', () => {
-      if (gameActive) {  // 只有正在进行中的游戏才能被结束
-        stopTimer();
-        gameActive = false;
-        gameLose = true;
-        gameWin = false;
-        statusMsg.innerText = '💥 游戏结束';
-        revealAllMines();  // 翻开所有雷
-        // 手动结束游戏也触发惩罚
-        triggerVibrationPunishment();
-      }
-    });
-
-    // 绑定棋盘事件
-    boardEl.addEventListener('click', handleBoardClick);
-    boardEl.addEventListener('contextmenu', handleBoardContextMenu);
-
-    // 防止面板长按菜单
-    document.querySelectorAll('button, input').forEach(el => {
-      el.addEventListener('contextmenu', (e) => e.preventDefault());
-    });
-
-    // 初始化：待开始状态，棋盘生成但不激活
-    resetBoard(false);
-    updatePunishmentDisplay(); // 初始化惩罚力度显示
+    // 初始化
+    updateMinesDisplay();
+    switchToPanel('connect'); // 默认显示连接面板
   })();
 </script>
 </body>
